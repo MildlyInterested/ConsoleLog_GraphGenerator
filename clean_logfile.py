@@ -6,7 +6,7 @@ pattern = re.compile("Server load", re.IGNORECASE)  # Compile a case-insensitive
 f = open("server_logs_cleaned.csv", "w")  # open file
 f.write("Server Time,Server FPS,RAM [MB],out [Kbps],in [Kbps],Non-G Messages,Guaranteed Messages,BE-NG,BE-G,Player Count" + "\n")
 
-with open ('server_console.log', 'rt') as myfile:    
+with open ('server_console.log', mode='rt', errors='replace') as myfile:    
     for line in myfile:
         linenum += 1
         if pattern.search(line) != None:      # If a match is found
