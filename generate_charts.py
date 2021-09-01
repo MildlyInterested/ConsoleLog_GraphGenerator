@@ -12,9 +12,13 @@ sns.set_style("whitegrid")
 df = pd.read_csv('server_logs_cleaned.csv', header=0)
 #print(df) #sanity check
 #print(df.dtypes)
-df['Server Time'] = pd.to_datetime(df['Server Time'])
+df['Server Time'] = pd.to_datetime(df['Server Time']) #converts string to datetime (YYYY-mm-dd-HH-mm-ss)
+df['Time Diff'] = df['Server Time'].diff()
+m = df['Server Time'].diff() < pd.Timedelta(0)
+df['Server Time'] += pd.to_timedelta(m.cumsum(), unit='d')
 #print(df.dtypes)
-#print(df)
+print(m)
+print(df)
 df.to_csv('server_logs_panda.csv')
 
 '''
@@ -50,7 +54,6 @@ sns.lineplot(ax=axes[5],x="Server Time", y="in [Kbps]",ci=None, data=df).xaxis.s
 sns.lineplot(ax=axes[6],x="Server Time", y="out [Kbps]",ci=None, data=df).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
 plt.savefig("Combined.png", dpi=200)
 plt.close()
-
 
 '''
 #altair HTML output
