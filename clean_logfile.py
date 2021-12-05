@@ -50,7 +50,7 @@ def cleanData():
     for line in logfile:
         if line.find("[LOGGING] [STATS]") > 0:
             fps = whiteSpaceData("FPS: ", line)
-            source = whiteSpaceData(" Source: ", line)
+            source = line[line.find("Source: ")+len("Source: "):line.find(" - FPS:")]
             localUnit = whiteSpaceData("Local units: ", line)
             time = line[0:line.find(" \"[LOGGING] [STATS]")]
             sum = time + "," + source + "," + fps + "," + localUnit + "\n"

@@ -3,4 +3,4 @@
 /__pycache__
 /*.csv
 /*.rpt
-/test.py
+/ignoretest.py
