@@ -22,8 +22,13 @@ df['Server Time'] += pd.to_timedelta(pastMidnight.cumsum(), unit='d')
 #print(df.dtypes)
 #print(pastMidnight)
 #print(df['FPS'])
+print(df)
+grouped_df = df.groupby(df.Source)
+Serverdf = grouped_df.get_group("Server")
+Serverdf.set_index('Server Time', True, False, True, True)
+Serverdf.to_csv('serverdf.csv')
+print(Serverdf)
 #df.to_csv('server_logs_panda.csv')
-
 
 figure, axes = plt.subplots(3, 1, figsize=(35,25))
 figure.suptitle("Server stats")
@@ -65,11 +70,11 @@ def plotLocalUnits(source):
 #sns.lineplot(ax=axes[4],x="Server Time", y="RAM [MB]",ci=None, data=df).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
 #sns.lineplot(ax=axes[5],x="Server Time", y="in [Kbps]",ci=None, data=df).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
 #sns.lineplot(ax=axes[6],x="Server Time", y="out [Kbps]",ci=None, data=df).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
-plotNpcValues()
-plotPlayerFps()
-plt.savefig("Combined.png", dpi=200)
+#plotNpcValues()
+#plotPlayerFps()
+#plt.savefig("Combined.png", dpi=200)
 #plt.show()
-plt.close()
+#plt.close()
 
 '''
 #altair HTML output
