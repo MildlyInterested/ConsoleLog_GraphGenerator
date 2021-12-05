@@ -1,5 +1,6 @@
 /Combined.png
-/test.py
-/server_logs_cleaned.csv
-/server_logs_panda.csv
 /server_console.log
+/__pycache__
+/*.csv
+/*.rpt
+/test.py

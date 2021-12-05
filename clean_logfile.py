@@ -41,17 +41,18 @@ opName = "2021_11_28_CHI.rpt"
 output = open("rpt_cleaned.csv", "w")
 output.write("Server Time,Source,FPS,Local units" + "\n")
 
+def whiteSpaceData(leading_up, line): #find number thats following the passed string in the passed line, needs whitespace after number!
+    data = line[line.find(leading_up)+len(leading_up):line.find(" ",line.find(leading_up)+len(leading_up))]
+    return data
+
 def cleanData():
     logfile = open(opName, "r", errors='replace')
     for line in logfile:
         if line.find("[LOGGING] [STATS]") > 0:
-            tmp = line[:line.find(" -  Active Scripts:")]
-            if tmp.find(" - Total units:") > 0:
-                tmp = tmp[:tmp.find(" - Total units:")]
-            time = tmp[:tmp.find(" \"[LOGGING]")]
-            source = tmp[tmp.find("Source: ") + 8:tmp.find(" - FPS:")]
-            fps = tmp[tmp.find("FPS: ") + 5:tmp.find(" - Local groups:")]
-            localUnit = tmp[tmp.find("Local units: ") + 13:]
+            fps = whiteSpaceData("FPS: ", line)
+            source = whiteSpaceData(" Source: ", line)
+            localUnit = whiteSpaceData("Local units: ", line)
+            time = line[0:line.find(" \"[LOGGING] [STATS]")]
             sum = time + "," + source + "," + fps + "," + localUnit + "\n"
             #print(sum) #sanity check
             output.write(sum)
