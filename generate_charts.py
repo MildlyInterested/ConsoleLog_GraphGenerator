@@ -70,26 +70,25 @@ def plotLocalUnits(source):
 #sns.lineplot(ax=axes[4],x="Server Time", y="RAM [MB]",ci=None, data=df).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
 #sns.lineplot(ax=axes[5],x="Server Time", y="in [Kbps]",ci=None, data=df).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
 #sns.lineplot(ax=axes[6],x="Server Time", y="out [Kbps]",ci=None, data=df).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
-#plotNpcValues()
-#plotPlayerFps()
+
+plotNpcValues()
+plotPlayerFps()
 #plt.savefig("Combined.png", dpi=200)
-#plt.show()
-#plt.close()
+plt.show()
+plt.close()
 
-'''
 #altair HTML output
-fps_chart = alt.Chart(df).mark_line().encode(
-    x='Server Time',
-    y='Server FPS'
-).save('Server_FPS.html')
+# fps_chart = alt.Chart(df).mark_line().encode(
+#     x='Server Time',
+#     y='Server FPS'
+# ).save('Server_FPS.html')
  
-alt.Chart(df).mark_line().encode(
-    x='Server Time',
-    y='Player Count'
-).save('Player_Count.html')
+# alt.Chart(df).mark_line().encode(
+#     x='Server Time',
+#     y='Player Count'
+# ).save('Player_Count.html')
 
-alt.Chart(df).mark_line().encode(
-    x='Server Time',
-    y='Guaranteed Messages'
-).save('Guaranteed_Messages.html')
-'''
+# alt.Chart(df).mark_line().encode(
+#     x='Server Time',
+#     y='Guaranteed Messages'
+# ).save('Guaranteed_Messages.html')
