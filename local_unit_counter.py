@@ -5,7 +5,7 @@ Author: Adam Coxson, PhD, The University of Liverpool
 Department of Chemistry, Materials Innovation Factory, Levershulme Research Centre
 Project: 
 Module: 
-Dependancies: 
+Dependencies: 
 """
 
 import numpy as np
@@ -60,15 +60,23 @@ raw_data = file_reader(filename=filename,n_header_rows=1)
 # Removing player timestamps
 player_stamp_idx = [] 
 for i in range(1,len(raw_data)):
-    #print(data[i][1])
+    #print(raw_data[i][1])
     val = raw_data[i][1]
     if val != 'Server' and val != 'HC1' and val != 'HC2':
         player_stamp_idx.append(i)
-
-
+#print(player_stamp_idx)
+#print("raw data")
+#print(raw_data)
 data = np.delete(raw_data,player_stamp_idx,axis=0)
+#print("data")
+#print(data)
 time_s = np.copy(data[:,0])
-for i in range(len(time_s)): time_s[i]=time_to_sec(time_s[i])
+#print("time_s")
+#print(time_s)
+for i in range(len(time_s)): 
+    time_s[i]=time_to_sec(time_s[i])
+    #print(time_s[i])
+
 
 # Grouping indexes of timestamps within desired time_gap tolerance
 i=0
@@ -84,15 +92,21 @@ while end_of_file == False: # This while loop is the complicated bit
         end_of_file = True
         group_list.append(group_line) # making sure to add the last group on
     elif int(time_s[j+1])-int(time_s[i]) <= time_gap: # If next point at j+1 is within timegap, add to group, where j= i+1 or i+2 or i+3.. 
-        group_line.append(j+1)
-        j=j+1
+        group_line.append(j+1) # if part of group append line index to group
+        j=j+1 #next group item
+        print("in group")
+        print(group_line)
     elif int(time_s[j+1])-int(time_s[i]) > time_gap: # If next point is not within time gap of first timestamp, reset and start from that point
         group_list.append(group_line) 
         i=j+1 # Resetting the counter to start from new datapoint that is not within the timegap of the old group
-        j=j+1
-        group_line = [i] # reset group with current point as first element, the rest will be appended on next iteration 
+        j=j+1 # 
+        group_line = [i] # reset group with current point as first element, the rest will be appended on next iteration
+        print("not in group")
+        print(group_line)
     else:
         print("Something fucked up man")
+#print("group list")
+#print(group_list)
         
 # Using groupings to assign formatted data
 formatted_data = np.zeros(shape=(len(group_list),5)).astype(str) # N rows 4 cols for time, HC1, HC2, Server, total

@@ -37,7 +37,7 @@ errors = []
 #if opName.find(".rpt") < 0:
 #    print("you fucked up")
 #    sys.exit()
-opName = "2021_11_28_CHI.rpt"
+opName = "2021_12_19_CHIV.rpt"
 output = open("rpt_cleaned.csv", "w")
 output.write("Server Time,Source,FPS,Local units" + "\n")
 
