@@ -27,7 +27,14 @@ for err in errors:                            # Iterate over the list of tuples
 
     #Time, FPS if player
     #Time, FPS, local units if not player
-    #Start with: [LOGGING] [STATS]
+    #Start with: a) [LOGGING] [STATS] [HC]
+    # b) [LOGGING] [STATS] [SERVER]
+    # c) [LOGGING] [STATS] [PLAYER]
+
+    #TODO: remove 20:09:57,Error: No vehicle,3.6,0 while cleaning
+    #TODO: change logic in cleanData func to use [LOGGING] [STATS][x] where x in player, hc or server selection
+    #TODO: add logic to cleanData func to omit lines where source = "player: error"
+    #TODO: account for different amounts of HCs
 
 #########################################
 errors = []
@@ -37,7 +44,7 @@ errors = []
 #if opName.find(".rpt") < 0:
 #    print("you fucked up")
 #    sys.exit()
-opName = "2021_12_19_CHIV.rpt"
+opName = "2022_01_09_TSI.rpt"
 output = open("rpt_cleaned.csv", "w")
 output.write("Server Time,Source,FPS,Local units" + "\n")
 

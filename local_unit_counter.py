@@ -56,13 +56,13 @@ def write_to_csv(filename, data, header=None):
 
 filename = "rpt_cleaned.csv"
 raw_data = file_reader(filename=filename,n_header_rows=1)
-
+# TODO: remove this cleaning, we will work with preconditions including pre-cleaned data.
 # Removing player timestamps
 player_stamp_idx = [] 
 for i in range(1,len(raw_data)):
-    #print(raw_data[i][1])
+    print(raw_data[i][1])
     val = raw_data[i][1]
-    if val != 'Server' and val != 'HC1' and val != 'HC2':
+    if val != 'Server' and val != 'HLC1' and val != 'HLC2':
         player_stamp_idx.append(i)
 #print(player_stamp_idx)
 #print("raw data")
@@ -70,6 +70,7 @@ for i in range(1,len(raw_data)):
 data = np.delete(raw_data,player_stamp_idx,axis=0)
 #print("data")
 #print(data)
+#requires cleaned data from running clean_logfile.py (?)
 time_s = np.copy(data[:,0])
 #print("time_s")
 #print(time_s)
@@ -79,35 +80,40 @@ for i in range(len(time_s)):
 
 
 # Grouping indexes of timestamps within desired time_gap tolerance
-i=0
-j=0
-group_list =[]
-group_line = [i]
-end_of_file = False
-time_gap = 30
+def createGroupList():
+    i=0
+    j=0
+    group_list =[]
+    group_line = [i]
+    end_of_file = False
+    time_gap = 30
 
-while end_of_file == False: # This while loop is the complicated bit
+    while end_of_file == False: # This while loop is the complicated bit
 
-    if j+1 == len(time_s): # End of data condition
-        end_of_file = True
-        group_list.append(group_line) # making sure to add the last group on
-    elif int(time_s[j+1])-int(time_s[i]) <= time_gap: # If next point at j+1 is within timegap, add to group, where j= i+1 or i+2 or i+3.. 
-        group_line.append(j+1) # if part of group append line index to group
-        j=j+1 #next group item
-        print("in group")
-        print(group_line)
-    elif int(time_s[j+1])-int(time_s[i]) > time_gap: # If next point is not within time gap of first timestamp, reset and start from that point
-        group_list.append(group_line) 
-        i=j+1 # Resetting the counter to start from new datapoint that is not within the timegap of the old group
-        j=j+1 # 
-        group_line = [i] # reset group with current point as first element, the rest will be appended on next iteration
-        print("not in group")
-        print(group_line)
-    else:
-        print("Something fucked up man")
-#print("group list")
-#print(group_list)
-        
+        if j+1 == len(time_s): # End of data condition
+            end_of_file = True
+            group_list.append(group_line) # making sure to add the last group on
+        elif int(time_s[j+1])-int(time_s[i]) <= time_gap: # If next point at j+1 is within timegap, add to group, where j= i+1 or i+2 or i+3.. 
+            group_line.append(j+1) # if part of group append line index to group
+            j=j+1 #next group item
+            print("in group")
+            print(group_line)
+        elif int(time_s[j+1])-int(time_s[i]) > time_gap: # If next point is not within time gap of first timestamp, reset and start from that point
+            group_list.append(group_line) 
+            i=j+1 # Resetting the counter to start from new datapoint that is not within the timegap of the old group
+            j+=1 # 
+            group_line = [i] # reset group with current point as first element, the rest will be appended on next iteration
+            print("not in group")
+            print(group_line)
+        else:
+            print("Something fucked up man")
+    #print("group list")
+    print(group_list)
+    return group_list
+
+group_list = createGroupList()
+# TODO: Add function to count the number of individual HCs available.        
+# TODO: Change logic of HC assignment based on actual number of HCs found in file
 # Using groupings to assign formatted data
 formatted_data = np.zeros(shape=(len(group_list),5)).astype(str) # N rows 4 cols for time, HC1, HC2, Server, total
 for i in range(len(group_list)):
@@ -116,16 +122,16 @@ for i in range(len(group_list)):
     total =0
     for j in range(0,len(idx)):
         total=total+int(data[idx[j],3])
-        if data[idx[j],1] == "HC1":
+        if data[idx[j],1] == "HLC1":
             formatted_data[i][1] = data[idx[j],3]
-        elif data[idx[j],1] == "HC2":
+        elif data[idx[j],1] == "HLC2":
             formatted_data[i][2] = data[idx[j],3]
         elif data[idx[j],1] == "Server":
             formatted_data[i][3] = data[idx[j],3]
         else:
             print("bzz bzz, I'm a bug")
     formatted_data[i][4] = total
-        
+
         
 write_to_csv(filename="local_unit_data.csv",data=formatted_data,header=["Server Time","HC1","HC2","Server","Total"])
         
