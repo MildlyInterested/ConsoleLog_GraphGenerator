@@ -4,10 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import altair as alt
 import clean_logfile as clean
-#from altair_saver import save
 import matplotlib.dates as md
-#import matplotlib.patches as mpatches
-
 
 ####CODE####
 date = clean.cleanData()

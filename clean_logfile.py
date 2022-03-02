@@ -1,80 +1,104 @@
+from ast import And
+from dataclasses import replace
 import sys
 import pandas as pd
-"""
-errors = []
-linenum = 0
-pattern = re.compile("Server load", re.IGNORECASE)  # Compile a case-insensitive regex
 
-f = open("server_logs_cleaned.csv", "w")  # open file
-f.write("Server Time,Server FPS,RAM [MB],out [Kbps],in [Kbps],Non-G Messages,Guaranteed Messages,BE-NG,BE-G,Player Count" + "\n")
-
-with open ('server_console.log', mode='rt', errors='replace') as myfile:    
-    for line in myfile:
-        linenum += 1
-        if pattern.search(line) != None:      # If a match is found
-            errors.append((linenum, line.rstrip('\n')))
-for err in errors:                            # Iterate over the list of tuples
-    #print("Line " + str(err[0]) + ": " + err[1])
-    timefixed = re.sub(r"(:\d\d:\d\d)",r"\1,",err[1]) #adds ","" after hh:mm:ss
-    playerfixed = re.sub(r"\((.*?)\)","",timefixed) # get rid of "L:0, R:1, B:0, G:9, D:0" behind player counter
-    semicolon = re.sub(":", ";", playerfixed, 2) #replaces first two ":"" with ";", important for server time
-    numberfixed = re.sub("[^0-9,;]", "", semicolon) #gets rid of all non number characters, "," and ";" are kept
-    resemicolon = re.sub(";", ":", numberfixed) #replaces ";" with ":" again, restores server time to original formatting
-
-    f.write(resemicolon + '\n')
-    print(resemicolon)
-"""
-
-    #Time, FPS if player
-    #Time, FPS, local units if not player
-    #Start with: a) [LOGGING] [STATS] [HC]
-    # b) [LOGGING] [STATS] [SERVER]
-    # c) [LOGGING] [STATS] [PLAYER]
-
-    #TODO: remove 20:09:57,Error: No vehicle,3.6,0 while cleaning
-    #TODO: change logic in cleanData func to use [LOGGING] [STATS][x] where x in player, hc or server selection
-    #TODO: add logic to cleanData func to omit lines where source = "player: error"
-    #TODO: account for different amounts of HCs
+   #TODO: account for different amounts of HCs
 
 #########################################
-errors = []
 #Used to differentiate between players and non-players
 #nonPlayers = ["HC", "SERVER"]
 #opName = input("Please enter the filename of the rpt you fancy...:\n")
 #if opName.find(".rpt") < 0:
 #    print("you fucked up")
 #    sys.exit()
-opName = "2022_01_09_TSI.rpt"
-output = open("rpt_cleaned.csv", "w")
-output.write("Server Time,Source,FPS,Local units" + "\n")
 
-def whiteSpaceData(leading_up, line): #find number thats following the passed string in the passed line, needs whitespace after number!
-    data = line[line.find(leading_up)+len(leading_up):line.find(" ",line.find(leading_up)+len(leading_up))]
+def whiteSpaceData(leading_up, line, follow=" "): #find number thats following the passed string in the passed line, follow is following characters
+    data = line[line.find(leading_up)+len(leading_up):line.find(follow,line.find(leading_up)+len(leading_up))]
     return data
 
-def cleanData():
-    logfile = open(opName, "r", errors='replace')
-    for line in logfile:
-        if line.find("[LOGGING] [STATS]") > 0:
-            fps = whiteSpaceData("FPS: ", line)
-            source = line[line.find("Source: ")+len("Source: "):line.find(" - FPS:")]
-            localUnit = whiteSpaceData("Local units: ", line)
-            time = line[0:line.find(" \"[LOGGING] [STATS]")]
-            sum = time + "," + source + "," + fps + "," + localUnit + "\n"
-            #print(sum) #sanity check
-            output.write(sum)
-    output.close()
-    return opName
+#Server Time, Source, FPS, Local groups, Local units, Total units, Vehicles
+def cleanRPT_server(inputfile, outputfile, header=False):
+    with open(inputfile, "r", errors='replace') as logfile, open(outputfile, "w") as outfile:
+        if header:
+            header_txt = "Server Time,Source,FPS,Local Groups,Local Units,Total units,Vehicles"
+            outfile.write(header_txt+"\n")
+        for line in logfile:
+            if (line.find("[LOGGING] [STATS] [SERVER]") > 0) and (line.find("error") <= 0) and (line.find("Error") <= 0):
+                time = line[0:line.find(" \"[LOGGING] [STATS]")]
+                source = line[line.find("Source: ")+len("Source: "):line.find(" - FPS:")]
+                fps = whiteSpaceData("FPS: ", line)
+                localGroup = whiteSpaceData("Local groups: ", line)
+                localUnit = whiteSpaceData("Local units: ", line)
+                totalUnit = whiteSpaceData("Total units: ", line)
+                vehicles = whiteSpaceData("Vehicles: ", line)
+                sum = time+","+source+","+fps+","+localGroup+","+localUnit+","+totalUnit+","+vehicles+"\n"
+                outfile.write(sum)
 
-#def createDataset():
-    #introduce logic to differentiate between players and non-players at the cleanData steps
-    #playerMeanFps
-    #serverFps
-    #HCLocalUnits
-    #player = open("playerFps.csv","w")
-    #player.write("Server Time,Source,FPS" + "\n")
-  #  server = open("serverFps.csv","w")
-   # server.write("Server Time,FPS"+ "\n")
-    #HC
-    #for line in output:
-        
+#Server Time, Source, FPS, Local groups, Local units
+def cleanRPT_headless(inputfile, outputfile, header=False):
+    with open(inputfile, "r", errors='replace') as logfile, open(outputfile, "w") as outfile:
+        if header:
+            header_txt = "Server Time,Source,FPS,Local Groups,Local Units"
+            outfile.write(header_txt+"\n")
+        for line in logfile:
+            if (line.find("[LOGGING] [STATS] [HC]") > 0) and (line.find("error") <= 0) and (line.find("Error") <= 0):
+                time = line[0:line.find(" \"[LOGGING] [STATS]")]
+                source = line[line.find("Source: ")+len("Source: "):line.find(" - FPS:")]
+                fps = whiteSpaceData("FPS: ", line)
+                localGroup = whiteSpaceData("Local groups: ", line)
+                localUnit = whiteSpaceData("Local units: ", line)
+                sum = time+","+source+","+fps+","+localGroup+","+localUnit+"\n"
+                outfile.write(sum)
+
+#Server Time, Playername, FPS, Local groups, local units
+def cleanRPT_player(inputfile, outputfile, header=False):
+    with open(inputfile, "r", errors='replace') as logfile, open(outputfile, "w") as outfile:
+        if header:
+            header_txt = "Server Time,Source,FPS,Local Groups,Local Units"
+            outfile.write(header_txt+"\n")
+        for line in logfile:
+            if (line.find("[LOGGING] [STATS] [PLAYER]") > 0) and (line.find("error") <= 0) and (line.find("Error") <= 0):
+                time = line[0:line.find(" \"[LOGGING] [STATS]")]
+                source = line[line.find("Source: ")+len("Source: "):line.find(" - FPS:")]
+                fps = whiteSpaceData("FPS: ", line)
+                localGroup = whiteSpaceData("Local groups: ", line)
+                localUnit = whiteSpaceData("Local units: ", line)
+                sum = time+","+source+","+fps+","+localGroup+","+localUnit+"\n"
+                outfile.write(sum)
+
+#Server Time,FPS,RAM [MB],out [Kbps],in [Kbps],NonGuaranteed, Guaranteed, Playercount
+def cleanLOG(inputfile, outputfile, header=False):
+    with open(inputfile, "r", errors='replace') as logfile, open(outputfile, "w") as outfile:
+        if header:
+            header_txt = "Server Time,FPS,RAM [MB],out [Kbps],in [Kbps],NonGuaranteed, Guaranteed, Playercount"
+            outfile.write(header_txt+"\n")
+        for line in logfile:
+            if (line.find("Server load:") > 0) and (line.find("error") <= 0) and (line.find("Error") <= 0):
+                time = line[0:line.find(" Server load:")]
+                fps = whiteSpaceData("FPS ", line,",")
+                ram = whiteSpaceData("memory used: ", line)
+                outgoing = whiteSpaceData("out: ", line)
+                incoming = whiteSpaceData("in: ", line)
+                nong_msg = whiteSpaceData("NG:", line,",")
+                g_msg = whiteSpaceData("G:", line,",")
+                players = whiteSpaceData("Players: ", line)
+                sum = time+","+fps+","+ram+","+outgoing+","+incoming+","+nong_msg+","+g_msg+","+players+"\n"
+                outfile.write(sum)
+
+cleanRPT_server("test.rpt", "server_cleaned.csv", header=True)
+cleanRPT_headless("test.rpt", "hc_cleaned.csv", header=True)
+cleanRPT_player("test.rpt", "player_cleaned.csv", header=True)
+cleanLOG("test.log", "log_cleaned.csv", header=True)
+
+# def createDataset():
+#     introduce logic to differentiate between players and non-players at the cleanData steps
+#     playerMeanFps
+#     serverFps
+#     HCLocalUnits
+#     player = open("playerFps.csv","w")
+#     player.write("Server Time,Source,FPS" + "\n")
+#     server = open("serverFps.csv","w")
+#     server.write("Server Time,FPS"+ "\n")
+#     HC
+#     for line in output:
