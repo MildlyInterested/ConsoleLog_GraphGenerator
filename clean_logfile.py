@@ -90,15 +90,3 @@ cleanRPT_server("test.rpt", "server_cleaned.csv", header=True)
 cleanRPT_headless("test.rpt", "hc_cleaned.csv", header=True)
 cleanRPT_player("test.rpt", "player_cleaned.csv", header=True)
 cleanLOG("test.log", "log_cleaned.csv", header=True)
-
-# def createDataset():
-#     introduce logic to differentiate between players and non-players at the cleanData steps
-#     playerMeanFps
-#     serverFps
-#     HCLocalUnits
-#     player = open("playerFps.csv","w")
-#     player.write("Server Time,Source,FPS" + "\n")
-#     server = open("serverFps.csv","w")
-#     server.write("Server Time,FPS"+ "\n")
-#     HC
-#     for line in output:

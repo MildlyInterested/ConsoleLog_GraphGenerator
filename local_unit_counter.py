@@ -25,6 +25,7 @@ def file_reader(filename, n_header_rows=1, delimiter=','):
     data = np.array(data[n_header_rows:]) # slice data from 1:end to get rid of header
     return data
 
+# dont need this, we use pandas
 def write_to_csv(filename, data, header=None):
     """
     Writes data to csv with option for header.
@@ -107,7 +108,6 @@ def createGroupList():
             print(group_line)
         else:
             print("Something fucked up man")
-    #print("group list")
     print(group_list)
     return group_list
 
