@@ -1,6 +1,4 @@
 from enum import unique
-from pickle import TRUE
-from tkinter.messagebox import YES
 import pandas as pd
 
 
@@ -10,7 +8,8 @@ import pandas as pd
 # day_rollover = df['Server Time'].diff() < pd.Timedelta(0)
 # df['Server Time'] += pd.to_timedelta(day_rollover.cumsum(), unit='d')
 
-def import_csv(import_csv, time_column="Server Time", day_rollover=TRUE):
+#import CSV while making sure to increment day if crossing midnight
+def import_csv(import_csv, time_column="Server Time", day_rollover=True):
     df = pd.read_csv(import_csv)
     df[time_column] = pd.to_datetime(df[time_column])
     if day_rollover:
@@ -18,21 +17,34 @@ def import_csv(import_csv, time_column="Server Time", day_rollover=TRUE):
         df[time_column] += pd.to_timedelta(day_rollover.cumsum(), unit='d')
     return df
 
+#get unique sources from df
+def get_unique_sources(df, column_n = 1):
+    sources_list = df.iloc[:,column_n].unique()
+    return sources_list
+
+#create dict from df for each source
+def dict_from_df(df, sources_list, column_name = "Source", HC = False):
+    df_dict = {}
+    if not HC:
+        for i in range(len(sources_list)):
+            df_dict[sources_list[i]] = df[df[column_name]==sources_list[i]]
+    else:
+        k = 1
+        for i in range(len(sources_list)):
+            HC_key = "HC_{}".format(k)
+            df_dict[HC_key] = df[df[column_name]==sources_list[i]]
+            k += 1
+    return df_dict
+
+server_df = import_csv("server_cleaned.csv")
 player_df = import_csv("player_cleaned.csv")
+hc_df = import_csv("hc_cleaned.csv")
+unique_players = get_unique_sources(player_df)
+unique_hcs = get_unique_sources(hc_df)
+player_dict = dict_from_df(player_df, unique_players)
 
-# unique_sources = df.iloc[:,1].unique()
-# k = 0
-# df_dict = {}
-
-# for i in range(len(unique_sources)): #store df for each player as a dict key
-#     df_dict[unique_sources[i]] = df[df['Source']==unique_sources[i]]
-
-# for i in range(len(unique_sources)): #store df for each HC and rename to defined values as a dict key
-#     HC_key = "HC_{}".format(k)
-#     df_dict[HC_key] = df[df['Source']==unique_sources[i]]
-#     k += 1
-#TODO create new df with dict like so
-# HC2_df = df_dict["HC_1"]
+#TODO
+#implement multi merge
+# https://stackoverflow.com/questions/44327999/python-pandas-merge-multiple-dataframes
 #TODO do merge_asof, replace NaN data with zeros afterwards
-#always have server column as original, LEFT argument, merge other df from the RIGHT
-#TODO multiple merges needed depending on amount of HCs, this might be slightly fucky
+# merge_test = pd.merge_asof(server_df, hc_dict["HC_1"],on="Server Time", suffixes=("_server","_HC"), tolerance=pd.Timedelta(seconds=30), direction="nearest")
