@@ -3,7 +3,6 @@ from dataclasses import replace
 import sys
 import pandas as pd
 
-   #TODO: account for different amounts of HCs
 
 #########################################
 #Used to differentiate between players and non-players
@@ -16,6 +15,9 @@ import pandas as pd
 def whiteSpaceData(leading_up, line, follow=" "): #find number thats following the passed string in the passed line, follow is following characters
     data = line[line.find(leading_up)+len(leading_up):line.find(follow,line.find(leading_up)+len(leading_up))]
     return data
+
+#TODO: combine functions below into one function
+#TODO: track steam verification error (crashes) and player disconnecting (3FPS bug)
 
 #Server Time, Source, FPS, Local groups, Local units, Total units, Vehicles
 def cleanRPT_server(inputfile, outputfile, header=False):

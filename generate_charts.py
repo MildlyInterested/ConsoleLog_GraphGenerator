@@ -14,7 +14,7 @@ df = pd.read_csv('rpt_cleaned.csv', header=0)
 #print(df.dtypes)
 df['Server Time'] = pd.to_datetime(df['Server Time']) #converts string to datetime (YYYY-mm-dd-HH-mm-ss)
 df['Time Diff'] = df['Server Time'].diff()
-pastMidnight = df['Server Time'].diff() < pd.Timedelta(0)
+pastMidnight = df['Server Time'].diff() < pd.Timedelta(0)  # type: ignore
 df['Server Time'] += pd.to_timedelta(pastMidnight.cumsum(), unit='d')
 #print(df.dtypes)
 #print(pastMidnight)
@@ -49,9 +49,9 @@ def plotPlayerFps():
     for player in players:
         plotFPS(player, 2)
 def plotFPS(source, index=0):
-    sns.lineplot(ax=axes[index], x="Server Time", y="FPS",ci=None, label=source, data=df.loc[df['Source'].isin([source])]).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
+    sns.lineplot(ax=axes[index], x="Server Time", y="FPS",ci=None, label=source, data=df.loc[df['Source'].isin([source])]).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))  # type: ignore
 def plotLocalUnits(source):
-    sns.lineplot(ax=axes[1], x="Server Time", y="Local units",ci=None, label=source, data=df.loc[df['Source'].isin([source])]).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
+    sns.lineplot(ax=axes[1], x="Server Time", y="Local units",ci=None, label=source, data=df.loc[df['Source'].isin([source])]).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))  # type: ignore
 
 #sns.lineplot(ax=axes[0], x="Server Time", y="FPS",ci=None, label="Server" ,data=df.loc[df['Source'].isin(['Server'])]).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
 #sns.lineplot(ax=axes[0], x="Server Time", y="FPS",ci=None, label="HC1", data=df.loc[df['Source'].isin(['HC1'])]).xaxis.set_major_formatter(md.DateFormatter('%H:%M:%S'))
