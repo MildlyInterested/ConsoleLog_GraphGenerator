@@ -87,7 +87,8 @@ def cleanLOG(inputfile, outputfile, header=False):
                 players = whiteSpaceData("Players: ", line)
                 sum = time+","+fps+","+ram+","+outgoing+","+incoming+","+nong_msg+","+g_msg+","+players+"\n"
                 outfile.write(sum)
-
+                
+#TODO don't save it in CSV, hold it in RAM
 cleanRPT_server("test.rpt", "server_cleaned.csv", header=True)
 cleanRPT_headless("test.rpt", "hc_cleaned.csv", header=True)
 cleanRPT_player("test.rpt", "player_cleaned.csv", header=True)

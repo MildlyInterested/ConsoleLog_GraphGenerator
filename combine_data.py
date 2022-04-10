@@ -41,7 +41,6 @@ def dict_from_df(df, sources_list, column_name = "Source", HC = False):
 #NEEDED FOR UBER MERGER
 def renaming_columns_so_the_shitty_code_wont_break(df_dict):
     for key in df_dict:
-        print(key)
         source = "Source_" + key
         fps =  "FPS_"+key
         localGroups = "Groups_"+key
@@ -66,3 +65,8 @@ unique_players = get_unique_sources(player_df)
 unique_hcs = get_unique_sources(hc_df)
 player_dict = dict_from_df(player_df, unique_players)
 hc_dict = dict_from_df(hc_df, unique_hcs, HC = True)
+player_dict_renamed = renaming_columns_so_the_shitty_code_wont_break(player_dict)
+hc_dict_renamed = renaming_columns_so_the_shitty_code_wont_break(hc_dict)
+complete_df = the_uber_merger(server_df, hc_dict_renamed, merge_on = 'Server Time', time_tolerance = 30, merge_direction = 'nearest')
+complete_df = the_uber_merger(complete_df, player_dict_renamed, merge_on = 'Server Time', time_tolerance = 30, merge_direction = 'nearest')
+complete_df.to_csv("complete_cleaned.csv")
