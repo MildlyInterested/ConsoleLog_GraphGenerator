@@ -32,7 +32,7 @@ def renaming_columns_so_the_shitty_code_wont_break(df_dict):
     return df_dict
 
 #yes it works
-def the_uber_merger(left_df, right_df_dict, merge_on = 'Server Time', time_tolerance = 30, merge_direction = 'nearest'):
+def the_uber_merger(left_df, right_df_dict, merge_on = 'Server Time', time_tolerance = 2.5, merge_direction = 'nearest'):
     #convert right_df_dict to list
     df_list = list(right_df_dict.values())
     #insert left_df into list as first so everything gets merged upon it
