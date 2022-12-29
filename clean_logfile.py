@@ -23,7 +23,7 @@ def whiteSpaceData(leading_up, line, follow=" "): #find number thats following t
 def cleanRPT_server(inputfile, outputfile, header=False):
     with open(inputfile, "r", errors='replace') as logfile, open(outputfile, "w") as outfile:
         if header:
-            header_txt = "Server Time,Source,FPS,Local Groups,Local Units,Total units,Vehicles"
+            header_txt = "Server Time,Source_Server,FPS_Server,Local Groups_Server,Local Units_Server,Total units_Server,Vehicles_Server"
             outfile.write(header_txt+"\n")
         for line in logfile:
             if (line.find("[LOGGING] [STATS] [SERVER]") > 0) and (line.find("error") <= 0) and (line.find("Error") <= 0):
