@@ -78,7 +78,7 @@ def cleanRPT_player(inputfile, time_column="Server Time", day_rollover=True):
 
 #Server Time,FPS,RAM [MB],out [Kbps],in [Kbps],NonGuaranteed, Guaranteed, Playercount
 def cleanLOG(inputfile, time_column="Server Time", day_rollover=True):
-    df = pd.DataFrame(columns=["Server Time", "FPS", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed", "Playercount"])
+    df = pd.DataFrame(columns=["Server Time", "FPS_Server_log", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed", "Playercount"])
     with open(inputfile, "r", errors='replace') as logfile:
         for line in logfile:
             if (line.find("Server load:") > 0) and (line.find("error") <= 0) and (line.find("Error") <= 0):
@@ -91,7 +91,7 @@ def cleanLOG(inputfile, time_column="Server Time", day_rollover=True):
                 g_msg = whiteSpaceData("G:", line,",")
                 players = whiteSpaceData("Players: ", line)
                 row = [time, fps, ram, outgoing, incoming, nong_msg, g_msg, players]
-                df = pd.concat([df, pd.DataFrame([row], columns=["Server Time", "FPS", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed", "Playercount"])], ignore_index=True)
+                df = pd.concat([df, pd.DataFrame([row], columns=["Server Time", "FPS_Server_log", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed", "Playercount"])], ignore_index=True)
     df[time_column] = pd.to_datetime(df[time_column])
     if day_rollover:
         day_rollover = df[time_column].diff() < pd.Timedelta(0)
@@ -101,8 +101,3 @@ def cleanLOG(inputfile, time_column="Server Time", day_rollover=True):
             continue
         df[col] = pd.to_numeric(df[col], errors='coerce')
     return df
-#TODO move this to UI
-server = cleanRPT_server("test.rpt")
-headless = cleanRPT_headless("test.rpt")
-player = cleanRPT_player("test.rpt")
-log = cleanLOG("test.log")

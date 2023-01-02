@@ -60,8 +60,3 @@ def merge_player(complete_df, player_df, merge_on = 'Server Time', time_toleranc
     player_dict_renamed = renaming_columns_so_the_shitty_code_wont_break(player_dict)
     merged_df = the_uber_merger(complete_df, player_dict_renamed, merge_on, time_tolerance, merge_direction)
     return merged_df
-
-#TODO move this to UI
-complete_df = merge_server(log, server)
-complete_df = merge_hc(complete_df, headless)
-complete_df = merge_player(complete_df, player)
