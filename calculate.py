@@ -5,6 +5,7 @@ def calc_player_fps(complete_df):
     player_fps_columns = [col for col in complete_df.columns if "FPS" in col and "Server" not in col and "HC" not in col]
     complete_df["Average Player FPS"] = complete_df[player_fps_columns].median(axis=1)
     return complete_df
+#TODO: discard entries with FPS < 3
 
 #sum up all units columns excluding columns with name Server and HC
 def player_units(complete_df):

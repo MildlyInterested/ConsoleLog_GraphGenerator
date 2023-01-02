@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly
-import altair as alt
-import plotly.express as px
 from plotly.subplots import make_subplots
 import scipy
 from scipy import signal
@@ -26,19 +24,36 @@ complete_df = calculate.calc_player_fps(complete_df)
 complete_df = calculate.player_units(complete_df)
 complete_df = calculate.nonplayer_units(complete_df)
 
-st.write(complete_df)
-filtered = st.multiselect("Filter columns", options=list(complete_df.columns), default=["Server Time", "Average Player FPS", "Units on Players", "Units on HC + Server", "Units on all", "Playercount"])
-st.write(complete_df[filtered])
+multiselect_list = list(complete_df.columns)
+multiselect_list.remove("Server Time")
 
-fig = make_subplots(rows=3, cols=1, shared_xaxes=True, subplot_titles=("Average Player FPS", "AI Count", "Playercount"), x_title="Server Time")
-fig.add_trace(plotly.graph_objects.Scatter(x=complete_df["Server Time"], y=complete_df["Average Player FPS"], mode="lines", name="Average Player FPS"), row=1, col=1)
-fig.add_trace(plotly.graph_objects.Scatter(x=complete_df["Server Time"], y=signal.savgol_filter(complete_df["Average Player FPS"],53,3), mode="lines", name="Average Player FPS AVG"), row=1, col=1)
-fig.add_trace(plotly.graph_objects.Scatter(x=complete_df["Server Time"], y=complete_df["Units on Players"], mode="lines", name="Units on Players"), row=2, col=1)
-fig.add_trace(plotly.graph_objects.Scatter(x=complete_df["Server Time"], y=complete_df["Units on HC + Server"], mode="lines", name="Units on HC + Server"), row=2, col=1)
-fig.add_trace(plotly.graph_objects.Scatter(x=complete_df["Server Time"], y=complete_df["Units on all"], mode="lines", name="Units on all"), row=2, col=1)
-fig.add_trace(plotly.graph_objects.Scatter(x=complete_df["Server Time"], y=complete_df["Playercount"], mode="lines", name="Playercount"), row=3, col=1)
-fig.update_layout(hovermode="x unified", height=800, xaxis_rangeslider_visible=True, xaxis_tickformat="%H:%M:%S")
-fig.update_xaxes(showticklabels=True, showgrid=True)
-fig.update_traces(xaxis='x1')
-st.plotly_chart(fig, use_container_width=True)
-st.write(fig.layout)
+filtered = st.multiselect("Filter columns", options=multiselect_list, default=["Average Player FPS", "Units on Players", "Units on HC + Server", "Units on all", "Playercount"])
+categories = [[],[],[],[],[]]
+for column in filtered:
+    if column.find("FPS") > -1:
+        categories[0].append(column)
+    elif column.find("Units") > -1:
+        categories[1].append(column)
+    elif column.find("Kbps") > -1:
+        categories[2].append(column)
+    elif column.find("Guaranteed") > -1:
+        categories[3].append(column)
+    else:
+        categories[4].append(column)
+
+categories = [x for x in categories if x != []]
+
+rowCount = len(categories)
+figtree = make_subplots(rows=rowCount, cols=1,shared_xaxes=True)
+for cat in categories:
+    for title in cat:
+        figtree.add_trace(plotly.graph_objects.Scatter(x=complete_df["Server Time"], y=complete_df[title], mode="lines", name=title), row=categories.index(cat)+1, col=1)
+hover_data = "<br>"
+for i in range(len(filtered)):
+    hover_data += filtered[i] + ": "+complete_df[filtered[i]].astype(str) + "<br>"
+hover_data += "<extra></extra>"
+figtree.update_layout(hovermode="x unified", height=800, xaxis_rangeslider_visible=True, xaxis_tickformat="%H:%M:%S")
+figtree.update_xaxes(showticklabels=True, showgrid=True)
+figtree.update_traces(xaxis='x1')
+figtree.update_traces(hovertemplate=hover_data, hoverinfo="text")
+st.plotly_chart(figtree, use_container_width=True)
