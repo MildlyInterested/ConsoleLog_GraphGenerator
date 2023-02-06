@@ -6,6 +6,7 @@ def calc_player_fps(complete_df):
     complete_df["Average Player FPS"] = complete_df[player_fps_columns].median(axis=1)
     return complete_df
 #TODO: discard entries with FPS < 3
+#TODO: add second column with filtered FPS
 
 #sum up all units columns excluding columns with name Server and HC
 def player_units(complete_df):

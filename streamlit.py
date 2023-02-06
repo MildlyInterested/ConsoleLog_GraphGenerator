@@ -19,11 +19,11 @@ folders = [folder for folder in folders if os.path.isdir(os.path.join(log_data_f
 folder = st.selectbox("Select Date/Operation", folders)
 #get file with .rpt extension in selected folder
 rpt_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".rpt")]
-rpt_file = rpt_files[0]
+rpt_file = st.selectbox("Select RPT file", rpt_files)
 #get file with .log extension  in selected folder
 log_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".log")]
 log_files = [file for file in log_files if file.find("server") > -1]
-log_file = log_files[0]
+log_file = st.selectbox("Select LOG file", log_files)
 # get full path to selected files
 rpt_file = os.path.join(log_data_folder, folder, rpt_file)
 log_file = os.path.join(log_data_folder, folder, log_file)
