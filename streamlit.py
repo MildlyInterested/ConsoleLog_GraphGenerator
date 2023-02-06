@@ -4,6 +4,7 @@ import plotly
 from plotly.subplots import make_subplots
 import scipy
 from scipy import signal
+import os
 
 import clean
 import combine
@@ -11,10 +12,26 @@ import calculate
 
 st.set_page_config(layout="wide")
 
-server = clean.cleanRPT_server("test.rpt")
-headless = clean.cleanRPT_headless("test.rpt")
-player = clean.cleanRPT_player("test.rpt")
-log = clean.cleanLOG("test.log")
+# get list of folders in log_data folder
+log_data_folder = "log_data"
+folders = os.listdir(log_data_folder)
+folders = [folder for folder in folders if os.path.isdir(os.path.join(log_data_folder, folder))]
+folder = st.selectbox("Select Date/Operation", folders)
+#get file with .rpt extension in selected folder
+rpt_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".rpt")]
+rpt_file = rpt_files[0]
+#get file with .log extension  in selected folder
+log_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".log")]
+log_files = [file for file in log_files if file.find("server") > -1]
+log_file = log_files[0]
+# get full path to selected files
+rpt_file = os.path.join(log_data_folder, folder, rpt_file)
+log_file = os.path.join(log_data_folder, folder, log_file)
+
+server = clean.cleanRPT_server(rpt_file)
+headless = clean.cleanRPT_headless(rpt_file)
+player = clean.cleanRPT_player(rpt_file)
+log = clean.cleanLOG(log_file)
 
 complete_df = combine.merge_server(log, server)
 complete_df = combine.merge_hc(complete_df, headless)
@@ -28,7 +45,7 @@ multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
 
 #TODO don't rerun whole script if filtered columns are changed
-filtered = st.multiselect("Filter columns", options=multiselect_list, default=["Average Player FPS", "Units on Players", "Units on HC + Server", "Units on all", "Playercount"])
+filtered = st.multiselect("Filter columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Units on Players", "Units on HC + Server", "Units on all", "Playercount"])
 categories = [[],[],[],[],[]]
 for column in filtered:
     if column.find("FPS") > -1:
