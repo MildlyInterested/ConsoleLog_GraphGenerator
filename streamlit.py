@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 import scipy
 from scipy import signal
 import os
+from datetime import timedelta
 
 import clean
 import combine
@@ -28,27 +29,48 @@ log_file = st.selectbox("Select LOG file", log_files)
 rpt_file = os.path.join(log_data_folder, folder, rpt_file)
 log_file = os.path.join(log_data_folder, folder, log_file)
 
-server = clean.cleanRPT_server(rpt_file)
-headless = clean.cleanRPT_headless(rpt_file)
-player = clean.cleanRPT_player(rpt_file)
-log = clean.cleanLOG(log_file)
+#check if csv_name already exists, if it does we can save ourselves some time doing intensive data cleaning
+csv_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".csv"
+if csv_name in os.listdir(os.path.join(log_data_folder, folder)):
+    st.write("CSV file already exists")
+    st.write("Loading CSV file")
+    complete_df = pd.read_csv(os.path.join(log_data_folder, folder, csv_name))
+    complete_df["Server Time"] = pd.to_datetime(complete_df["Server Time"])
+    st.write("CSV file loaded")
+else:
+    st.write("CSV file does not exist")
+    st.write("Creating CSV file")
+    #clean data
+    server = clean.cleanRPT_server(rpt_file)
+    headless = clean.cleanRPT_headless(rpt_file)
+    player = clean.cleanRPT_player(rpt_file)
+    log = clean.cleanLOG(log_file)
 
-complete_df = combine.merge_server(log, server)
-complete_df = combine.merge_hc(complete_df, headless)
-complete_df = combine.merge_player(complete_df, player, time_tolerance=30)
+    complete_df = combine.merge_server(log, server)
+    complete_df = combine.merge_hc(complete_df, headless)
+    complete_df = combine.merge_player(complete_df, player, time_tolerance=30)
 
-complete_df = calculate.calc_player_fps(complete_df)
-complete_df = calculate.player_units(complete_df)
-complete_df = calculate.nonplayer_units(complete_df)
+    complete_df = calculate.calc_player_fps(complete_df)
+    complete_df = calculate.player_units(complete_df)
+    complete_df = calculate.nonplayer_units(complete_df)
+    #write complete_df with csv_name into folder
+    complete_df.to_csv(os.path.join(log_data_folder, folder, csv_name), index=False)
 
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
 
-#TODO don't rerun whole script if filtered columns are changed
 filtered = st.multiselect("Filter columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Units on Players", "Units on HC + Server", "Units on all", "Playercount"])
+# filter time range with st slider
+min_value = complete_df["Server Time"].min()
+min_value = min_value.to_pydatetime()
+max_value = complete_df["Server Time"].max()
+max_value = max_value.to_pydatetime()
+time_range = st.slider("Time Range", min_value=min_value, max_value=max_value, value=(min_value, max_value), format="HH:mm:ss", step=timedelta(minutes=5))
+complete_df = complete_df[(complete_df["Server Time"] >= time_range[0]) & (complete_df["Server Time"] <= time_range[1])]
+
 categories = [[],[],[],[],[]]
 for column in filtered:
-    if column.find("FPS") > -1:
+    if column.find("FPS") > -1 or column.find("Playercount") > -1:
         categories[0].append(column)
     elif column.find("Units") > -1:
         categories[1].append(column)
@@ -79,7 +101,8 @@ for i in range(len(categories_flat)):
     hover_data += categories_flat[i] + ": "+complete_df[categories_flat[i]].astype(str) + "<br>"
 hover_data += "<extra></extra>"
 
-figtree.update_layout(hovermode="x unified", height=800, xaxis_rangeslider_visible=True, xaxis_tickformat="%H:%M:%S")
+figtree.update_layout(hovermode="x unified", height=800, xaxis_tickformat="%H:%M:%S")
+# figtree.update_layout(hovermode="x unified", height=800, xaxis_rangeslider_visible=True, xaxis_tickformat="%H:%M:%S")
 figtree.update_xaxes(showticklabels=True, showgrid=True)
 figtree.update_traces(xaxis='x1')
 for value in first:
