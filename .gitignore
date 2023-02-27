@@ -1,7 +1,9 @@
 /Combined.png
-/test.py
+/server_console.log
+/__pycache__
 /*.csv
 /*.rpt
 /*.log
-/__pycache__
 /ignoretest.py
+/.vscode
+/log_data
