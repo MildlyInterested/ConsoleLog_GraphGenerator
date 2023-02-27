@@ -22,7 +22,7 @@ rpt_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) 
 rpt_file = st.selectbox("Select RPT file", rpt_files)
 #get file with .log extension  in selected folder
 log_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".log")]
-log_files = [file for file in log_files if file.find("server") > -1]
+log_files = [file for file in log_files if file.find("console") > -1]
 log_file = st.selectbox("Select LOG file", log_files)
 # get full path to selected files
 rpt_file = os.path.join(log_data_folder, folder, rpt_file)
