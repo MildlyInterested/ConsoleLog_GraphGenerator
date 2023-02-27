@@ -29,17 +29,22 @@ log_file = st.selectbox("Select LOG file", log_files)
 rpt_file = os.path.join(log_data_folder, folder, rpt_file)
 log_file = os.path.join(log_data_folder, folder, log_file)
 
-#check if csv_name already exists, if it does we can save ourselves some time doing intensive data cleaning
+#check if csv_name already exists, if it does we can save ourselves some intensive data cleaning
 csv_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".csv"
 if csv_name in os.listdir(os.path.join(log_data_folder, folder)):
-    st.write("CSV file already exists")
-    st.write("Loading CSV file")
+    st.write("Dataframe already exists")
     complete_df = pd.read_csv(os.path.join(log_data_folder, folder, csv_name))
     complete_df["Server Time"] = pd.to_datetime(complete_df["Server Time"])
-    st.write("CSV file loaded")
+    day_rollover = complete_df["Server Time"].diff() < pd.Timedelta(0)
+    complete_df["Server Time"] += pd.to_timedelta(day_rollover.cumsum(), unit='d')
+    for col in complete_df.columns:
+        if col == "Server Time" or col == "Source_Server" or col.find("Source") > -1:
+            continue
+        complete_df[col] = pd.to_numeric(complete_df[col], errors='coerce')
+    st.write("Dataframe loaded")
 else:
-    st.write("CSV file does not exist")
-    st.write("Creating CSV file")
+    st.write("Dataframe does not exist")
+    st.write("Dataframe will be created")
     #clean data
     server = clean.cleanRPT_server(rpt_file)
     headless = clean.cleanRPT_headless(rpt_file)
@@ -55,7 +60,7 @@ else:
     complete_df = calculate.nonplayer_units(complete_df)
     #write complete_df with csv_name into folder
     complete_df.to_csv(os.path.join(log_data_folder, folder, csv_name), index=False)
-
+    st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
 
@@ -103,6 +108,8 @@ hover_data += "<extra></extra>"
 
 figtree.update_layout(hovermode="x unified", height=800, xaxis_tickformat="%H:%M:%S")
 # figtree.update_layout(hovermode="x unified", height=800, xaxis_rangeslider_visible=True, xaxis_tickformat="%H:%M:%S")
+#make y axis in third subplot logarithmic
+# figtree.update_yaxes(type="log", row=4, col=1) #TODO make this dynamic
 figtree.update_xaxes(showticklabels=True, showgrid=True)
 figtree.update_traces(xaxis='x1')
 for value in first:
