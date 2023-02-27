@@ -1,1 +1,0 @@
-Get-Content .\stats.txt | Where-Object {$_ -match 'HC2'} | Set-Content HC2_stats.txt
