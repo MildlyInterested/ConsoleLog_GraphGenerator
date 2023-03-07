@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly
 from plotly.subplots import make_subplots
-import scipy
-from scipy import signal
 import os
 from datetime import timedelta
 
@@ -30,17 +28,10 @@ rpt_file = os.path.join(log_data_folder, folder, rpt_file)
 log_file = os.path.join(log_data_folder, folder, log_file)
 
 #check if csv_name already exists, if it does we can save ourselves some intensive data cleaning
-csv_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".csv"
-if csv_name in os.listdir(os.path.join(log_data_folder, folder)):
+df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".pickle"
+if df_name in os.listdir(os.path.join(log_data_folder, folder)):
     st.write("Dataframe already exists")
-    complete_df = pd.read_csv(os.path.join(log_data_folder, folder, csv_name))
-    complete_df["Server Time"] = pd.to_datetime(complete_df["Server Time"])
-    day_rollover = complete_df["Server Time"].diff() < pd.Timedelta(0)
-    complete_df["Server Time"] += pd.to_timedelta(day_rollover.cumsum(), unit='d')
-    for col in complete_df.columns:
-        if col == "Server Time" or col == "Source_Server" or col.find("Source") > -1:
-            continue
-        complete_df[col] = pd.to_numeric(complete_df[col], errors='coerce')
+    complete_df = pd.read_pickle(os.path.join(log_data_folder, folder, df_name))
     st.write("Dataframe loaded")
 else:
     st.write("Dataframe does not exist")
@@ -58,8 +49,8 @@ else:
     complete_df = calculate.calc_player_fps(complete_df)
     complete_df = calculate.player_units(complete_df)
     complete_df = calculate.nonplayer_units(complete_df)
-    #write complete_df with csv_name into folder
-    complete_df.to_csv(os.path.join(log_data_folder, folder, csv_name), index=False)
+    #write complete_df with df_name into folder
+    complete_df.to_pickle(os.path.join(log_data_folder, folder, df_name))
     st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
