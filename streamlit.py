@@ -56,7 +56,7 @@ else:
     st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
-st.write(complete_df)
+# st.write(complete_df)
 
 filtered = st.multiselect("Filter columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Total AI Units", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
 # filter time range with st slider
