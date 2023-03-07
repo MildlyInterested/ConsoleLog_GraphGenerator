@@ -14,19 +14,17 @@ def player_units(complete_df):
     #-1 to only counts extra local units, not player itself
     for col in units_columns_players:
         complete_df[col] = complete_df[col] - 1
-    #interpolate missing values in units_columns_players
-    for col in units_columns_players:
-        complete_df[col] = complete_df[col].interpolate()
     complete_df["Units on Players"] = complete_df[units_columns_players].sum(axis=1)
     return complete_df
 
 #sum up server and HC units columns
 def nonplayer_units(complete_df):
     units_columns_nonplayers = [col for col in complete_df.columns if "Units" in col and ("Server" in col or "HC" in col)]
-    #interpolate missing values in units_columns_players
-    for col in units_columns_nonplayers:
-        complete_df[col] = complete_df[col].interpolate()
     complete_df["Units on HC + Server"] = complete_df[units_columns_nonplayers].sum(axis=1)
     #sum up all units
     complete_df["Units on all"] = complete_df["Units on Players"] + complete_df["Units on HC + Server"]
+    return complete_df
+
+def total_units(complete_df):
+    complete_df["Total AI Units"] = complete_df["Total units_Server"] - complete_df["Playercount"]
     return complete_df

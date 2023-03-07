@@ -27,8 +27,9 @@ log_file = st.selectbox("Select LOG file", log_files)
 rpt_file = os.path.join(log_data_folder, folder, rpt_file)
 log_file = os.path.join(log_data_folder, folder, log_file)
 
-#check if csv_name already exists, if it does we can save ourselves some intensive data cleaning
+#check if df_name already exists, if it does we can save ourselves some intensive data cleaning
 df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".pickle"
+#TODO hash based check?
 if df_name in os.listdir(os.path.join(log_data_folder, folder)):
     st.write("Dataframe already exists")
     complete_df = pd.read_pickle(os.path.join(log_data_folder, folder, df_name))
@@ -49,13 +50,15 @@ else:
     complete_df = calculate.calc_player_fps(complete_df)
     complete_df = calculate.player_units(complete_df)
     complete_df = calculate.nonplayer_units(complete_df)
+    complete_df = calculate.total_units(complete_df)
     #write complete_df with df_name into folder
     complete_df.to_pickle(os.path.join(log_data_folder, folder, df_name))
     st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
+st.write(complete_df)
 
-filtered = st.multiselect("Filter columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Units on Players", "Units on HC + Server", "Units on all", "Playercount"])
+filtered = st.multiselect("Filter columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Total AI Units", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
 # filter time range with st slider
 min_value = complete_df["Server Time"].min()
 min_value = min_value.to_pydatetime()
@@ -98,11 +101,8 @@ for i in range(len(categories_flat)):
 hover_data += "<extra></extra>"
 
 figtree.update_layout(hovermode="x unified", height=800, xaxis_tickformat="%H:%M:%S")
-# figtree.update_layout(hovermode="x unified", height=800, xaxis_rangeslider_visible=True, xaxis_tickformat="%H:%M:%S")
-#make y axis in third subplot logarithmic
-# figtree.update_yaxes(type="log", row=4, col=1) #TODO make this dynamic
 figtree.update_xaxes(showticklabels=True, showgrid=True)
-figtree.update_traces(xaxis='x1')
+figtree.update_traces(xaxis='x1', connectgaps=True)
 for value in first:
     figtree.update_traces(hovertemplate=hover_data, hoverinfo="text", selector=dict(name=value))
 st.plotly_chart(figtree, use_container_width=True)
