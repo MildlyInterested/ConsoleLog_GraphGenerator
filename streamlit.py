@@ -10,6 +10,14 @@ import combine
 import calculate
 
 st.set_page_config(layout="wide")
+col1, col2 = st.columns(2)
+with col1:
+    st.title("Arma Log Analyzer")
+    st.write("This is a community project to analyze the performance of the 16AA's Arma 3 Servers.")
+    st.write("The Source Code can be found on [GitHub](https://github.com/MildlyInterested/ConsoleLog_GraphGenerator).")
+    st.write("The data is collected by our [Mission Framework](https://github.com/16AA-Milsim/MissionFramework/blob/master/scripts/logging.sqf) and the `#monitords` [Arma admin command](https://community.bistudio.com/wiki/Multiplayer_Server_Commands#Commands).")
+with col2:
+    st.image("https://16aa.net/assets/img/logo/16AA-logo.png", width=200, use_column_width=True)
 
 # get list of folders in log_data folder
 log_data_folder = "log_data"
@@ -60,7 +68,6 @@ else:
     st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
-# st.write(complete_df)
 
 filtered = st.multiselect("Filter Columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Total AI Units", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
 # filter time range with st slider
