@@ -10,19 +10,30 @@ import combine
 import calculate
 
 st.set_page_config(layout="wide")
+col1, col2 = st.columns(2)
+with col1:
+    st.title("Arma Log Analyzer")
+    st.write("This is a community project to analyze the performance of the 16AA's Arma 3 Servers.")
+    st.write("The Source Code can be found on [GitHub](https://github.com/MildlyInterested/ConsoleLog_GraphGenerator).")
+    st.write("The data is collected by our [Mission Framework](https://github.com/16AA-Milsim/MissionFramework/blob/master/scripts/logging.sqf) and the `#monitords` [Arma admin command](https://community.bistudio.com/wiki/Multiplayer_Server_Commands#Commands).")
+with col2:
+    st.image("https://16aa.net/assets/img/logo/16AA-logo.png", width=200, use_column_width=True)
 
 # get list of folders in log_data folder
 log_data_folder = "log_data"
 folders = os.listdir(log_data_folder)
 folders = [folder for folder in folders if os.path.isdir(os.path.join(log_data_folder, folder))]
-folder = st.selectbox("Select Date/Operation", folders)
+folder = st.selectbox("**Select Date/Operation**", folders)
+col1_1, col1_2 = st.columns(2)
 #get file with .rpt extension in selected folder
 rpt_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".rpt")]
-rpt_file = st.selectbox("Select RPT file", rpt_files)
+with col1_1:
+    rpt_file = st.selectbox("Select RPT file", rpt_files)
 #get file with .log extension  in selected folder
 log_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".log")]
 log_files = [file for file in log_files if file.find("console") > -1]
-log_file = st.selectbox("Select LOG file", log_files)
+with col1_2:    
+    log_file = st.selectbox("Select LOG file", log_files)
 # get full path to selected files
 rpt_file = os.path.join(log_data_folder, folder, rpt_file)
 log_file = os.path.join(log_data_folder, folder, log_file)
@@ -32,39 +43,39 @@ df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splite
 #TODO hash based check?
 if df_name in os.listdir(os.path.join(log_data_folder, folder)):
     st.write("Dataframe already exists")
-    complete_df = pd.read_pickle(os.path.join(log_data_folder, folder, df_name))
+    with st.spinner("Loading dataframe..."):
+        complete_df = pd.read_pickle(os.path.join(log_data_folder, folder, df_name))
     st.write("Dataframe loaded")
 else:
     st.write("Dataframe does not exist")
     st.write("Dataframe will be created")
-    #clean data
-    server = clean.cleanRPT_server(rpt_file)
-    headless = clean.cleanRPT_headless(rpt_file)
-    player = clean.cleanRPT_player(rpt_file)
-    log = clean.cleanLOG(log_file)
-
-    complete_df = combine.merge_server(log, server)
-    complete_df = combine.merge_hc(complete_df, headless)
-    complete_df = combine.merge_player(complete_df, player, time_tolerance=30)
-
-    complete_df = calculate.calc_player_fps(complete_df)
-    complete_df = calculate.player_units(complete_df)
-    complete_df = calculate.nonplayer_units(complete_df)
-    complete_df = calculate.total_units(complete_df)
+    with st.spinner("Cleaning data..."):
+        server = clean.cleanRPT_server(rpt_file)
+        headless = clean.cleanRPT_headless(rpt_file)
+        player = clean.cleanRPT_player(rpt_file)
+        log = clean.cleanLOG(log_file)
+    with st.spinner("Merging dataframes..."):
+        complete_df = combine.merge_server(log, server)
+        complete_df = combine.merge_hc(complete_df, headless)
+        complete_df = combine.merge_player(complete_df, player, time_tolerance=30)
+    with st.spinner("Calculating data..."):
+        complete_df = calculate.calc_player_fps(complete_df)
+        complete_df = calculate.player_units(complete_df)
+        complete_df = calculate.nonplayer_units(complete_df)
+        complete_df = calculate.total_units(complete_df)
     #write complete_df with df_name into folder
     complete_df.to_pickle(os.path.join(log_data_folder, folder, df_name))
     st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
-# st.write(complete_df)
 
-filtered = st.multiselect("Filter columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Total AI Units", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
+filtered = st.multiselect("Filter Columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Total AI Units", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
 # filter time range with st slider
 min_value = complete_df["Server Time"].min()
 min_value = min_value.to_pydatetime()
 max_value = complete_df["Server Time"].max()
 max_value = max_value.to_pydatetime()
-time_range = st.slider("Time Range", min_value=min_value, max_value=max_value, value=(min_value, max_value), format="HH:mm:ss", step=timedelta(minutes=5))
+time_range = st.slider("Filter Time Range (Server Time)", min_value=min_value, max_value=max_value, value=(min_value, max_value), format="HH:mm:ss", step=timedelta(minutes=5))
 complete_df = complete_df[(complete_df["Server Time"] >= time_range[0]) & (complete_df["Server Time"] <= time_range[1])]
 
 categories = [[],[],[],[],[]]
