@@ -90,6 +90,7 @@ with stats_expander:
     fig = plotly.graph_objects.Figure(data=plotly.graph_objects.Heatmap(z=pearson_correlations.values, x=pearson_correlations.columns, y=pearson_correlations.columns, colorscale="RdBu", zmin=-1, zmax=1))
     fig.update_layout(title="Pearson Correlations", yaxis_autorange="reversed")
     st.plotly_chart(fig)
+    st.write("Correlation does not imply causation. It only shows the linear relationship between two variables. For example, a high correlation between FPS and Playercount does not imply that FPS causes Playercount to increase. It could depend on a third variable or it could be a coincidence.")
 
 categories = [[],[],[],[],[]]
 for column in filtered:
