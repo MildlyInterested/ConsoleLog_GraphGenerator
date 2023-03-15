@@ -4,6 +4,7 @@ import plotly
 from plotly.subplots import make_subplots
 import os
 from datetime import timedelta
+import numpy as np
 
 import clean
 import combine
@@ -13,8 +14,8 @@ st.set_page_config(layout="wide")
 col1, col2 = st.columns(2)
 with col1:
     st.title("Arma Log Analyzer")
-    st.write("This is a community project to analyze the performance of the 16AA's Arma 3 Servers.")
-    st.write("The Source Code can be found on [GitHub](https://github.com/MildlyInterested/ConsoleLog_GraphGenerator).")
+    st.write("This is a community project to analyze the performance of the [16AA](https://16aa.net)'s Arma 3 Servers.")
+    st.write("The source code can be found on [GitHub](https://github.com/MildlyInterested/ConsoleLog_GraphGenerator).")
     st.write("The data is collected by our [Mission Framework](https://github.com/16AA-Milsim/MissionFramework/blob/master/scripts/logging.sqf) and the `#monitords` [Arma admin command](https://community.bistudio.com/wiki/Multiplayer_Server_Commands#Commands).")
 with col2:
     st.image("https://16aa.net/assets/img/logo/16AA-logo.png", width=200, use_column_width=True)
@@ -78,6 +79,18 @@ max_value = complete_df["Server Time"].max()
 max_value = max_value.to_pydatetime()
 time_range = st.slider("Filter Time Range (Server Time)", min_value=min_value, max_value=max_value, value=(min_value, max_value), format="HH:mm:ss", step=timedelta(minutes=5))
 complete_df = complete_df[(complete_df["Server Time"] >= time_range[0]) & (complete_df["Server Time"] <= time_range[1])]
+
+stats_expander = st.expander("Statistical Shenanigans")
+with stats_expander:
+    pearson_correlations = complete_df[filtered].corr(method="pearson")
+    # set upper triangle to nan
+    mask = np.triu(np.ones_like(pearson_correlations, dtype=bool))
+    pearson_correlations = pearson_correlations.mask(mask)
+    #plot pearson correlations as heatmap
+    fig = plotly.graph_objects.Figure(data=plotly.graph_objects.Heatmap(z=pearson_correlations.values, x=pearson_correlations.columns, y=pearson_correlations.columns, colorscale="RdBu", zmin=-1, zmax=1))
+    fig.update_layout(title="Pearson Correlations", yaxis_autorange="reversed")
+    st.plotly_chart(fig)
+    st.write("Correlation does not imply causation. It only shows the linear relationship between two variables. For example, a high correlation between FPS and Playercount does not imply that FPS causes Playercount to increase. It could depend on a third variable or it could be a coincidence.")
 
 categories = [[],[],[],[],[]]
 for column in filtered:
