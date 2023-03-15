@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 import os
 from datetime import timedelta
 import numpy as np
+from datetime import datetime
 
 import clean
 import combine
@@ -20,22 +21,45 @@ with col1:
 with col2:
     st.image("https://16aa.net/assets/img/logo/16AA-logo.png", width=200, use_column_width=True)
 
+query_dict = st.experimental_get_query_params()
+st.write(query_dict)
+if "op" in query_dict:
+    folder_shared = query_dict["op"][0]
+if "rpt" in query_dict:
+    rpt_file_shared = query_dict["rpt"][0]
+if "log" in query_dict:
+    log_file_shared = query_dict["log"][0]
+if "times" in query_dict:
+    time_shared_start = datetime.strptime(query_dict["times"][0], "%Y-%m-%d %H:%M:%S")
+    time_shared_stop = datetime.strptime(query_dict["times"][1], "%Y-%m-%d %H:%M:%S")
+if "columns" in query_dict:
+    columns_shared = query_dict["columns"]
+
 # get list of folders in log_data folder
 log_data_folder = "log_data"
 cache_data_folder = "cache_data"
 folders = os.listdir(log_data_folder)
 folders = [folder for folder in folders if os.path.isdir(os.path.join(log_data_folder, folder))]
-folder = st.selectbox("**Select Date/Operation**", folders)
+if "op" in query_dict:
+    folder = st.selectbox("**Select Date/Operation**", folders, index=folders.index(folder_shared))
+else:
+    folder = st.selectbox("**Select Date/Operation**", folders)
 col1_1, col1_2 = st.columns(2)
 #get file with .rpt extension in selected folder
 rpt_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".rpt")]
 with col1_1:
-    rpt_file = st.selectbox("Select RPT file", rpt_files)
+    if "rpt" in query_dict:
+        rpt_file = st.selectbox("Select RPT file", rpt_files, index=rpt_files.index(os.path.basename(rpt_file_shared)))
+    else:
+        rpt_file = st.selectbox("Select RPT file", rpt_files)
 #get file with .log extension  in selected folder
 log_files = [file for file in os.listdir(os.path.join(log_data_folder, folder)) if file.endswith(".log")]
 log_files = [file for file in log_files if file.find("console") > -1]
-with col1_2:    
-    log_file = st.selectbox("Select LOG file", log_files)
+with col1_2:
+    if "log" in query_dict:
+        log_file = st.selectbox("Select LOG file", log_files, index=log_files.index(os.path.basename(log_file_shared)))
+    else:        
+        log_file = st.selectbox("Select LOG file", log_files)
 # get full path to selected files
 rpt_file = os.path.join(log_data_folder, folder, rpt_file)
 log_file = os.path.join(log_data_folder, folder, log_file)
@@ -71,13 +95,19 @@ else:
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
 
-filtered = st.multiselect("Filter Columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Total AI Units", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
+if "columns" in query_dict:
+    filtered = st.multiselect("Filter Columns", options=multiselect_list, default=columns_shared)
+else:
+    filtered = st.multiselect("Filter Columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Total AI Units", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
 # filter time range with st slider
 min_value = complete_df["Server Time"].min()
 min_value = min_value.to_pydatetime()
 max_value = complete_df["Server Time"].max()
 max_value = max_value.to_pydatetime()
-time_range = st.slider("Filter Time Range (Server Time)", min_value=min_value, max_value=max_value, value=(min_value, max_value), format="HH:mm:ss", step=timedelta(minutes=5))
+if "times" in query_dict:
+    time_range = st.slider("Filter Time Range (Server Time)", min_value=min_value, max_value=max_value, value=(time_shared_start, time_shared_stop), format="HH:mm:ss", step=timedelta(minutes=5))
+else:
+    time_range = st.slider("Filter Time Range (Server Time)", min_value=min_value, max_value=max_value, value=(min_value, max_value), format="HH:mm:ss", step=timedelta(minutes=5))
 complete_df = complete_df[(complete_df["Server Time"] >= time_range[0]) & (complete_df["Server Time"] <= time_range[1])]
 
 stats_expander = st.expander("Statistical Shenanigans")
@@ -131,3 +161,11 @@ figtree.update_traces(xaxis='x1', connectgaps=True)
 for value in first:
     figtree.update_traces(hovertemplate=hover_data, hoverinfo="text", selector=dict(name=value))
 st.plotly_chart(figtree, use_container_width=True)
+
+st.experimental_set_query_params(
+    op=folder,
+    rpt=rpt_file,
+    log=log_file,
+    times=time_range,
+    columns=filtered
+)
