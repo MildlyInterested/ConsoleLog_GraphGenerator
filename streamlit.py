@@ -21,6 +21,7 @@ with col2:
 
 # get list of folders in log_data folder
 log_data_folder = "log_data"
+cache_data_folder = "cache_data"
 folders = os.listdir(log_data_folder)
 folders = [folder for folder in folders if os.path.isdir(os.path.join(log_data_folder, folder))]
 folder = st.selectbox("**Select Date/Operation**", folders)
@@ -41,10 +42,10 @@ log_file = os.path.join(log_data_folder, folder, log_file)
 #check if df_name already exists, if it does we can save ourselves some intensive data cleaning
 df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".pickle"
 #TODO hash based check?
-if df_name in os.listdir(os.path.join(log_data_folder, folder)):
+if df_name in os.listdir(cache_data_folder):
     st.write("Dataframe already exists")
     with st.spinner("Loading dataframe..."):
-        complete_df = pd.read_pickle(os.path.join(log_data_folder, folder, df_name))
+        complete_df = pd.read_pickle(os.path.join(cache_data_folder, df_name))
     st.write("Dataframe loaded")
 else:
     st.write("Dataframe does not exist")
@@ -64,7 +65,7 @@ else:
         complete_df = calculate.nonplayer_units(complete_df)
         complete_df = calculate.total_units(complete_df)
     #write complete_df with df_name into folder
-    complete_df.to_pickle(os.path.join(log_data_folder, folder, df_name))
+    complete_df.to_pickle(os.path.join(cache_data_folder, df_name))
     st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
