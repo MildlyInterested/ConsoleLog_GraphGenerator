@@ -20,6 +20,8 @@ def cleanRPT_server(inputfile, time_column="Server Time", day_rollover=True):
                 row = [time, source, fps, localGroup, localUnit, totalUnit, vehicles]
                 df = pd.concat([df, pd.DataFrame([row], columns=["Server Time", "Source_Server", "FPS_Server", "Local groups_Server", "Local units_Server", "Total units_Server", "Vehicles_Server"])], ignore_index=True)
     #TODO get panda to infer data types and not hardcode them
+    #remove spaces in time_column
+    df[time_column] = df[time_column].str.replace(" ", "")
     df[time_column] = pd.to_datetime(df[time_column])
     if day_rollover:
         day_rollover = df[time_column].diff() < pd.Timedelta(0)
@@ -43,6 +45,7 @@ def cleanRPT_headless(inputfile, time_column="Server Time", day_rollover=True):
                 localUnit = whiteSpaceData("Local units: ", line)
                 row = [time, source, fps, localGroup, localUnit]
                 df = pd.concat([df, pd.DataFrame([row], columns=["Server Time", "Source", "FPS", "Local groups", "Local units"])], ignore_index=True)
+    df[time_column] = df[time_column].str.replace(" ", "")
     df[time_column] = pd.to_datetime(df[time_column])
     if day_rollover:
         day_rollover = df[time_column].diff() < pd.Timedelta(0)
@@ -66,6 +69,7 @@ def cleanRPT_player(inputfile, time_column="Server Time", day_rollover=True):
                 localUnit = whiteSpaceData("Local units: ", line)
                 row = [time, source, fps, localGroup, localUnit]
                 df = pd.concat([df, pd.DataFrame([row], columns=["Server Time", "Source", "FPS", "Local groups", "Local units"])], ignore_index=True)
+    df[time_column] = df[time_column].str.replace(" ", "")
     df[time_column] = pd.to_datetime(df[time_column])
     if day_rollover:
         day_rollover = df[time_column].diff() < pd.Timedelta(0)
@@ -92,6 +96,7 @@ def cleanLOG(inputfile, time_column="Server Time", day_rollover=True):
                 players = whiteSpaceData("Players: ", line)
                 row = [time, fps, ram, outgoing, incoming, nong_msg, g_msg, players]
                 df = pd.concat([df, pd.DataFrame([row], columns=["Server Time", "FPS_Server_log", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed", "Playercount"])], ignore_index=True)
+    df[time_column] = df[time_column].str.replace(" ", "")
     df[time_column] = pd.to_datetime(df[time_column])
     if day_rollover:
         day_rollover = df[time_column].diff() < pd.Timedelta(0)
