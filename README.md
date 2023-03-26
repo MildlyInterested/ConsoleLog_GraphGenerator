@@ -6,7 +6,7 @@ Webapp to generate graphs from Arma 3 server logs
 ```
 pip install -r requirements.txt
 ```
-### Then run the following command to generate the graph:
+### Then run the following command to start the website:
 ```
 streamlit run ./streamlit.py
 ```
