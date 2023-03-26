@@ -72,7 +72,7 @@ multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
 
 # attendance expander
-attendance_expander = st.expander("Attendance")
+attendance_expander = st.expander("Attendance") # TODO save this whole thing as pickle and reload it
 with attendance_expander:
     attendance_df = None
     col1, col2 = st.columns(2)
