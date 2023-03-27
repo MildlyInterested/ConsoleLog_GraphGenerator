@@ -42,6 +42,7 @@ log_file = os.path.join(log_data_folder, folder, log_file)
 
 #check if df_name already exists, if it does we can save ourselves some intensive data cleaning
 df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".pickle"
+attendance_df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + "_attendance.pickle"
 #TODO hash based check?
 if df_name in os.listdir(cache_data_folder):
     st.write("Dataframe already exists")
@@ -77,30 +78,33 @@ with attendance_expander:
     attendance_df = None
     col1, col2 = st.columns(2)
     with col1:
-        # get all columns with "Source" in the name but not with "Server" or "HC" in the name
-        players = [col for col in complete_df.columns if (col.find("Source") > -1 and col.find("Server") == -1 and col.find("HC") == -1)]
-        attendance_df = pd.DataFrame(columns=["Playername", "Connect Time", "Disconnect Time", "Playtime"])
-        #insert players into dataframe
-        for player in players:
-            attendance_df = pd.concat([attendance_df, pd.DataFrame({"Playername": player}, index=[0])], ignore_index=True)
-        for player in players:
-            # get first row where player is not NaN
-            connect_time = complete_df[complete_df[player].notnull()].iloc[0]["Server Time"]
-            attendance_df.loc[attendance_df["Playername"] == player, "Connect Time"] = connect_time
-            attendance_df["Connect Time"] = pd.to_datetime(attendance_df["Connect Time"])
-        for player in players:
-            # get last row where player is not NaN
-            disconnect_time = complete_df[complete_df[player].notnull()].iloc[-1]["Server Time"]
-            attendance_df.loc[attendance_df["Playername"] == player, "Disconnect Time"] = disconnect_time
-            attendance_df["Disconnect Time"] = pd.to_datetime(attendance_df["Disconnect Time"])
-        
-        attendance_df["Playtime"] = (attendance_df["Disconnect Time"] - attendance_df["Connect Time"]).astype('timedelta64[s]')
-        #convert seconds to hours, minutes and seconds
-        attendance_df["Playtime"] = attendance_df["Playtime"].apply(lambda x: str(timedelta(seconds=x)))
-        attendance_df["Connect Time"] = attendance_df["Connect Time"].dt.strftime("%H:%M:%S")
-        attendance_df["Disconnect Time"] = attendance_df["Disconnect Time"].dt.strftime("%H:%M:%S")
-        # remove "Source_" from playername
-        attendance_df["Playername"] = attendance_df["Playername"].str.replace("Source_", "")
+        if attendance_df_name in os.listdir(cache_data_folder):
+            attendance_df = pd.read_pickle(os.path.join(cache_data_folder, attendance_df_name)) 
+        else:
+            # get all columns with "Source" in the name but not with "Server" or "HC" in the name
+            players = [col for col in complete_df.columns if (col.find("Source") > -1 and col.find("Server") == -1 and col.find("HC") == -1)]
+            attendance_df = pd.DataFrame(columns=["Playername", "Connect Time", "Disconnect Time", "Playtime"])
+            #insert players into dataframe
+            for player in players:
+                attendance_df = pd.concat([attendance_df, pd.DataFrame({"Playername": player}, index=[0])], ignore_index=True)
+            for player in players:
+                # get first row where player is not NaN
+                connect_time = complete_df[complete_df[player].notnull()].iloc[0]["Server Time"]
+                attendance_df.loc[attendance_df["Playername"] == player, "Connect Time"] = connect_time
+                attendance_df["Connect Time"] = pd.to_datetime(attendance_df["Connect Time"])
+            for player in players:
+                # get last row where player is not NaN
+                disconnect_time = complete_df[complete_df[player].notnull()].iloc[-1]["Server Time"]
+                attendance_df.loc[attendance_df["Playername"] == player, "Disconnect Time"] = disconnect_time
+                attendance_df["Disconnect Time"] = pd.to_datetime(attendance_df["Disconnect Time"])
+            attendance_df["Playtime"] = (attendance_df["Disconnect Time"] - attendance_df["Connect Time"]).astype('timedelta64[s]')
+            #convert seconds to hours, minutes and seconds
+            attendance_df["Playtime"] = attendance_df["Playtime"].apply(lambda x: str(timedelta(seconds=x)))
+            attendance_df["Connect Time"] = attendance_df["Connect Time"].dt.strftime("%H:%M:%S")
+            attendance_df["Disconnect Time"] = attendance_df["Disconnect Time"].dt.strftime("%H:%M:%S")
+            # remove "Source_" from playername
+            attendance_df["Playername"] = attendance_df["Playername"].str.replace("Source_", "")
+            attendance_df.to_pickle(os.path.join(cache_data_folder, attendance_df_name))
         pd.set_option("display.max_colwidth", None)
         st.dataframe(attendance_df)
     with col2:
