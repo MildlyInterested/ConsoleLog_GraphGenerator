@@ -2,3 +2,4 @@
 /.vscode
 /log_data/*/
 /cache_data/*.pickle
+/cache_data/*.json

@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 import os
 from datetime import timedelta
 import numpy as np
+import json
 
 import clean
 import combine
@@ -43,6 +44,7 @@ log_file = os.path.join(log_data_folder, folder, log_file)
 #check if df_name already exists, if it does we can save ourselves some intensive data cleaning
 df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".pickle"
 attendance_df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + "_attendance.pickle"
+json_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".json"
 #TODO hash based check?
 rpt_broken = False
 log_broken = False
@@ -63,9 +65,11 @@ else:
             headless = clean.cleanRPT_headless(rpt_file)
             player = clean.cleanRPT_player(rpt_file)
             # rpt is broken if of one the above dataframes are shorter than 20 rows
-            if len(server) < 20 or len(headless) < 20 or len(player) < 20:
+            # get lenght of longest dataframe
+            max_len = max(len(server), len(headless), len(player))
+            if max_len < 20:
                 rpt_broken = True
-                st.write("Error while cleaning RPT file")
+                st.write("RPT file too short, discarding")
         except:
             rpt_broken = True
             st.write("Error while cleaning RPT file")
@@ -95,9 +99,19 @@ else:
         complete_df = log
     #write complete_df with df_name into folder
     complete_df.to_pickle(os.path.join(cache_data_folder, df_name))
+    #write rpt_broken and log_broken in json file in cache_data_folder
+    with open(os.path.join(cache_data_folder, json_name), "w") as f:
+        json.dump({"rpt_broken": rpt_broken, "log_broken": log_broken}, f)
+
     st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
+
+# read rpt_broken and log_broken from json file
+with open(os.path.join(cache_data_folder, json_name), "r") as f:
+    json_data = json.load(f)
+    rpt_broken = json_data["rpt_broken"]
+    log_broken = json_data["log_broken"]
 
 # attendance expander
 attendance_expander = st.expander("Attendance") # TODO save this whole thing as pickle and reload it
