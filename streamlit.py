@@ -48,7 +48,7 @@ rpt_broken = False
 log_broken = False
 complete_df = None
 # set debug to True to force data cleaning
-debug = True
+debug = False
 if df_name in os.listdir(cache_data_folder) and debug == False:
     st.write("Dataframe already exists")
     with st.spinner("Loading dataframe..."):
