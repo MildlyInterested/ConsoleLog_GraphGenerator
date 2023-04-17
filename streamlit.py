@@ -131,14 +131,22 @@ with attendance_expander:
                     attendance_df = pd.concat([attendance_df, pd.DataFrame({"Playername": player}, index=[0])], ignore_index=True)
                 for player in players:
                     # get first row where player is not NaN
-                    connect_time = complete_df[complete_df[player].notnull()].iloc[0]["Server Time"]
-                    attendance_df.loc[attendance_df["Playername"] == player, "Connect Time"] = connect_time
-                    attendance_df["Connect Time"] = pd.to_datetime(attendance_df["Connect Time"])
+                    try:
+                        connect_time = complete_df[complete_df[player].notnull()].iloc[0]["Server Time"]
+                        attendance_df.loc[attendance_df["Playername"] == player, "Connect Time"] = connect_time
+                        attendance_df["Connect Time"] = pd.to_datetime(attendance_df["Connect Time"])
+                    except:
+                        # if player is not in the dataframe set connect time to 00:00:00
+                        attendance_df.loc[attendance_df["Playername"] == player, "Connect Time"] = "00:00:00"
                 for player in players:
                     # get last row where player is not NaN
-                    disconnect_time = complete_df[complete_df[player].notnull()].iloc[-1]["Server Time"]
-                    attendance_df.loc[attendance_df["Playername"] == player, "Disconnect Time"] = disconnect_time
-                    attendance_df["Disconnect Time"] = pd.to_datetime(attendance_df["Disconnect Time"])
+                    try:
+                        disconnect_time = complete_df[complete_df[player].notnull()].iloc[-1]["Server Time"]
+                        attendance_df.loc[attendance_df["Playername"] == player, "Disconnect Time"] = disconnect_time
+                        attendance_df["Disconnect Time"] = pd.to_datetime(attendance_df["Disconnect Time"])
+                    except:
+                        # if player is not in the dataframe set disconnect time to 00:00:00
+                        attendance_df.loc[attendance_df["Playername"] == player, "Disconnect Time"] = "00:00:00"
                 attendance_df["Playtime"] = (attendance_df["Disconnect Time"] - attendance_df["Connect Time"]).astype('timedelta64[s]')
                 #convert seconds to hours, minutes and seconds
                 attendance_df["Playtime"] = attendance_df["Playtime"].apply(lambda x: str(timedelta(seconds=x)))
