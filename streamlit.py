@@ -6,6 +6,7 @@ import os
 from datetime import timedelta
 import numpy as np
 from datetime import datetime
+import json
 
 import clean
 import combine
@@ -66,8 +67,15 @@ log_file = os.path.join(log_data_folder, folder, log_file)
 
 #check if df_name already exists, if it does we can save ourselves some intensive data cleaning
 df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".pickle"
+attendance_df_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + "_attendance.pickle"
+json_name = os.path.splitext(os.path.basename(rpt_file))[0] + "_" + os.path.splitext(os.path.basename(log_file))[0] + ".json"
 #TODO hash based check?
-if df_name in os.listdir(cache_data_folder):
+rpt_broken = False
+log_broken = False
+complete_df = None
+# set debug to True to force data cleaning
+debug = False
+if df_name in os.listdir(cache_data_folder) and debug == False:
     st.write("Dataframe already exists")
     with st.spinner("Loading dataframe..."):
         complete_df = pd.read_pickle(os.path.join(cache_data_folder, df_name))
@@ -76,29 +84,116 @@ else:
     st.write("Dataframe does not exist")
     st.write("Dataframe will be created")
     with st.spinner("Cleaning data..."):
-        server = clean.cleanRPT_server(rpt_file)
-        headless = clean.cleanRPT_headless(rpt_file)
-        player = clean.cleanRPT_player(rpt_file)
-        log = clean.cleanLOG(log_file)
+        try:
+            server = clean.cleanRPT_server(rpt_file)
+            headless = clean.cleanRPT_headless(rpt_file)
+            player = clean.cleanRPT_player(rpt_file)
+            # rpt is broken if of one the above dataframes are shorter than 20 rows
+            # get lenght of longest dataframe
+            max_len = max(len(server), len(headless), len(player))
+            if max_len < 20:
+                rpt_broken = True
+                st.write("RPT file too short, discarding")
+        except:
+            rpt_broken = True
+            st.write("Error while cleaning RPT file")
+        try:
+            log = clean.cleanLOG(log_file)
+            if len(log) < 20:
+                st.write("FATAL ERROR while cleaning LOG file")
+                st.stop()
+        except:
+            log_broken = True
+            st.write("FATAL ERROR while cleaning LOG file")
+            st.stop()
     with st.spinner("Merging dataframes..."):
-        complete_df = combine.merge_server(log, server)
-        complete_df = combine.merge_hc(complete_df, headless)
-        complete_df = combine.merge_player(complete_df, player, time_tolerance=30)
+        if not rpt_broken:
+            complete_df = combine.merge_server(log, server)
+            complete_df = combine.merge_hc(complete_df, headless)
+            complete_df = combine.merge_player(complete_df, player, time_tolerance=2.5)
     with st.spinner("Calculating data..."):
-        complete_df = calculate.calc_player_fps(complete_df)
-        complete_df = calculate.player_units(complete_df)
-        complete_df = calculate.nonplayer_units(complete_df)
-        complete_df = calculate.total_units(complete_df)
+        if not rpt_broken:
+            # only works with data gathered from RPT
+            complete_df = calculate.calc_player_fps(complete_df)
+            complete_df = calculate.player_units(complete_df)
+            complete_df = calculate.nonplayer_units(complete_df)
+            complete_df = calculate.total_units(complete_df)
+    if rpt_broken:
+        # if rpt are broken only thing left is the log file so we can just use that
+        complete_df = log
     #write complete_df with df_name into folder
     complete_df.to_pickle(os.path.join(cache_data_folder, df_name))
+    #write rpt_broken and log_broken in json file in cache_data_folder
+    with open(os.path.join(cache_data_folder, json_name), "w") as f:
+        json.dump({"rpt_broken": rpt_broken, "log_broken": log_broken}, f)
+
     st.write("Dataframe created")
 multiselect_list = list(complete_df.columns)
 multiselect_list.remove("Server Time")
 
-if "columns" in query_dict:
-    filtered = st.multiselect("Filter Columns", options=multiselect_list, default=columns_shared)
-else:
+# read rpt_broken and log_broken from json file
+with open(os.path.join(cache_data_folder, json_name), "r") as f:
+    json_data = json.load(f)
+    rpt_broken = json_data["rpt_broken"]
+    log_broken = json_data["log_broken"]
+
+# attendance expander
+attendance_expander = st.expander("Attendance") # TODO save this whole thing as pickle and reload it
+with attendance_expander:
+    if not rpt_broken:
+        attendance_df = None
+        col1, col2 = st.columns(2)
+        with col1:
+            if attendance_df_name in os.listdir(cache_data_folder):
+                attendance_df = pd.read_pickle(os.path.join(cache_data_folder, attendance_df_name)) 
+            else:
+                # get all columns with "Source" in the name but not with "Server" or "HC" in the name
+                players = [col for col in complete_df.columns if (col.find("Source") > -1 and col.find("Server") == -1 and col.find("HC") == -1)]
+                attendance_df = pd.DataFrame(columns=["Playername", "Connect Time", "Disconnect Time", "Playtime"])
+                #insert players into dataframe
+                for player in players:
+                    attendance_df = pd.concat([attendance_df, pd.DataFrame({"Playername": player}, index=[0])], ignore_index=True)
+                for player in players:
+                    # get first row where player is not NaN
+                    try:
+                        connect_time = complete_df[complete_df[player].notnull()].iloc[0]["Server Time"]
+                        attendance_df.loc[attendance_df["Playername"] == player, "Connect Time"] = connect_time
+                        attendance_df["Connect Time"] = pd.to_datetime(attendance_df["Connect Time"])
+                    except:
+                        # if player is not in the dataframe set connect time to 00:00:00
+                        attendance_df.loc[attendance_df["Playername"] == player, "Connect Time"] = "00:00:00"
+                for player in players:
+                    # get last row where player is not NaN
+                    try:
+                        disconnect_time = complete_df[complete_df[player].notnull()].iloc[-1]["Server Time"]
+                        attendance_df.loc[attendance_df["Playername"] == player, "Disconnect Time"] = disconnect_time
+                        attendance_df["Disconnect Time"] = pd.to_datetime(attendance_df["Disconnect Time"])
+                    except:
+                        # if player is not in the dataframe set disconnect time to 00:00:00
+                        attendance_df.loc[attendance_df["Playername"] == player, "Disconnect Time"] = "00:00:00"
+                attendance_df["Playtime"] = (attendance_df["Disconnect Time"] - attendance_df["Connect Time"]).astype('timedelta64[s]')
+                #convert seconds to hours, minutes and seconds
+                attendance_df["Playtime"] = attendance_df["Playtime"].apply(lambda x: str(timedelta(seconds=x)))
+                attendance_df["Connect Time"] = attendance_df["Connect Time"].dt.strftime("%H:%M:%S")
+                attendance_df["Disconnect Time"] = attendance_df["Disconnect Time"].dt.strftime("%H:%M:%S")
+                # remove "Source_" from playername
+                attendance_df["Playername"] = attendance_df["Playername"].str.replace("Source_", "")
+                attendance_df.to_pickle(os.path.join(cache_data_folder, attendance_df_name))
+            pd.set_option("display.max_colwidth", None)
+            st.dataframe(attendance_df)
+        with col2:
+            st.subheader("Attendees:")
+            st.write(", ".join(attendance_df["Playername"].to_list()))
+            st.write("**Playercount:**", len(attendance_df))
+    else:
+        st.write("RPT file broken, attendance not available")
+
+filtered = None 
+if not rpt_broken:
     filtered = st.multiselect("Filter Columns", options=multiselect_list, default=["Average Player FPS", "FPS_Server_log", "Total AI Units", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
+else:
+    # RPT is broken so we only plot "FPS_Server_log", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"
+    filtered = st.multiselect("Filter Columns", options=multiselect_list, default=["FPS_Server_log", "Playercount", "RAM [MB]", "out [Kbps]", "in [Kbps]", "NonGuaranteed", "Guaranteed"])
 # filter time range with st slider
 min_value = complete_df["Server Time"].min()
 min_value = min_value.to_pydatetime()
@@ -110,6 +205,7 @@ else:
     time_range = st.slider("Filter Time Range (Server Time)", min_value=min_value, max_value=max_value, value=(min_value, max_value), format="HH:mm:ss", step=timedelta(minutes=5))
 complete_df = complete_df[(complete_df["Server Time"] >= time_range[0]) & (complete_df["Server Time"] <= time_range[1])]
 
+# st.dataframe(complete_df[filtered])
 stats_expander = st.expander("Statistical Shenanigans")
 with stats_expander:
     pearson_correlations = complete_df[filtered].corr(method="pearson")
@@ -121,6 +217,7 @@ with stats_expander:
     fig.update_layout(title="Pearson Correlations", yaxis_autorange="reversed")
     st.plotly_chart(fig)
     st.write("Correlation does not imply causation. It only shows the linear relationship between two variables. For example, a high correlation between FPS and Playercount does not imply that FPS causes Playercount to increase. It could depend on a third variable or it could be a coincidence.")
+
 
 categories = [[],[],[],[],[]]
 for column in filtered:
